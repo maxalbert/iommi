@@ -1,5 +1,4 @@
 import re
-import warnings
 from contextlib import contextmanager
 from datetime import datetime
 from decimal import (
