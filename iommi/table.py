@@ -57,11 +57,6 @@ from tri_declarative import (
 )
 from tri_struct import Struct
 
-from iommi import (
-    Fragment,
-    Header,
-    html,
-)
 from iommi._web_compat import (
     format_html,
     HttpResponse,
@@ -106,6 +101,9 @@ from iommi.form import (
 )
 from iommi.fragment import (
     build_and_bind_h_tag,
+    Fragment,
+    Header,
+    html,
     Tag,
 )
 from iommi.from_model import (
@@ -236,7 +234,7 @@ def ordered_by_on_list(objects, order_field, is_desc=False):
 
 
 def yes_no_formatter(value, **_):
-    """ Handle True/False from Django model and 1/0 from raw sql """
+    """Handle True/False from Django model and 1/0 from raw sql"""
     if value is None:
         return ''
     if value == 1:  # boolean True is equal to 1
@@ -419,7 +417,9 @@ class Column(Part):
 
     def on_refine_done(self):
         if 'choice' in getattr(self, '__tri_declarative_shortcut_stack', []):
-            assert self.iommi_namespace.get('choices') is not None, 'To use Column.choice, you must pass the choices list'
+            assert (
+                self.iommi_namespace.get('choices') is not None
+            ), 'To use Column.choice, you must pass the choices list'
 
         self.header = HeaderColumnConfig(**self.header).refine_done(parent=self)
         self.is_sorting: bool = None
@@ -1479,7 +1479,9 @@ class Table(Part, Tag):
         action_class = Action
         page_class = Page
         cells_class = Cells
-        endpoints__tbody__func = lambda table, **_: {'html': table.__html__(template='iommi/table/table_container.html')}
+        endpoints__tbody__func = lambda table, **_: {
+            'html': table.__html__(template='iommi/table/table_container.html')
+        }
         endpoints__csv__func = endpoint__csv
 
         attrs = Namespace(
@@ -1622,8 +1624,23 @@ class Table(Part, Tag):
         self.sorted_and_filtered_rows = None
         self.visible_rows = None
 
-        refine_done_members(self, name='actions', members_from_namespace=self.actions, cls=self.get_meta().action_class, members_cls=Actions)
-        refine_done_members(self, name='columns', members_from_namespace=self.columns, members_from_declared=self.get_declared('_columns_dict'), members_from_auto=columns_from_auto, cls=self.get_meta().member_class, extra_member_defaults=extra_column_defaults,)
+        refine_done_members(
+            self,
+            name='actions',
+            members_from_namespace=self.actions,
+            cls=self.get_meta().action_class,
+            members_cls=Actions,
+        )
+
+        refine_done_members(
+            self,
+            name='columns',
+            members_from_namespace=self.columns,
+            members_from_declared=self.get_declared('_columns_dict'),
+            members_from_auto=columns_from_auto,
+            cls=self.get_meta().member_class,
+            extra_member_defaults=extra_column_defaults,
+        )
 
         if not self.sortable:
             for column in values(self.iommi_namespace.columns):
@@ -1684,13 +1701,15 @@ class Table(Part, Tag):
 
                 filters[name] = filter()
 
-            self.query = self.get_meta().query_class(**setdefaults_path(
-                Namespace(),
-                query_args,
-                filters=filters,
-                _name='query',
-                model=self.model,
-            ))
+            self.query = self.get_meta().query_class(
+                **setdefaults_path(
+                    Namespace(),
+                    query_args,
+                    filters=filters,
+                    _name='query',
+                    model=self.model,
+                )
+            )
 
             declared_filters = self.query.iommi_namespace.filters
             self.query = self.query.refine(Prio.table_defaults, filters=declared_filters)
@@ -1727,24 +1746,29 @@ class Table(Part, Tag):
             add_hidden_all_pks_field(declared_bulk_fields)
 
             # x.bulk.include can be a callable here. We treat that as truthy on purpose.
-            if any(x.bulk.include for x in values(self.iommi_namespace.columns)) or 'actions' in self.iommi_namespace.bulk:
-                self.bulk = form_class(**setdefaults_path(
-                    Namespace(),
-                    bulk_args,
-                    _name='bulk',
-                    model=self.model,
-                    actions__submit=dict(
-                        post_handler=bulk__post_handler,
-                        display_name=gettext_lazy('Bulk change'),
-                        include=lambda table, **_: any(c.bulk.include for c in values(table.columns)),
-                    ),
-                    actions__delete=dict(
-                        call_target__attribute='delete',
-                        post_handler=bulk_delete__post_handler,
-                        display_name=gettext_lazy('Bulk delete'),
-                        include=False,
-                    ),
-                )).refine(
+            if (
+                any(x.bulk.include for x in values(self.iommi_namespace.columns))
+                or 'actions' in self.iommi_namespace.bulk
+            ):
+                self.bulk = form_class(
+                    **setdefaults_path(
+                        Namespace(),
+                        bulk_args,
+                        _name='bulk',
+                        model=self.model,
+                        actions__submit=dict(
+                            post_handler=bulk__post_handler,
+                            display_name=gettext_lazy('Bulk change'),
+                            include=lambda table, **_: any(c.bulk.include for c in values(table.columns)),
+                        ),
+                        actions__delete=dict(
+                            call_target__attribute='delete',
+                            post_handler=bulk_delete__post_handler,
+                            display_name=gettext_lazy('Bulk delete'),
+                            include=False,
+                        ),
+                    )
+                ).refine(
                     Prio.table_defaults,
                     fields=declared_bulk_fields,
                 )
@@ -2064,7 +2088,7 @@ class Table(Part, Tag):
         if self.get_request().POST.get('_all_pks_') == '1':
             return 'all'
         else:
-            return [key[len(prefix):] for key in self.get_request().POST if key.startswith(prefix)]
+            return [key[len(prefix) :] for key in self.get_request().POST if key.startswith(prefix)]
 
     def selection(self, prefix='pk_'):
         """Return the selected rows.

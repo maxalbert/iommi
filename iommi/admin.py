@@ -54,8 +54,7 @@ from iommi.refinable import Refinable
 from iommi.shortcut import with_defaults
 
 app_verbose_name_by_label = {
-    config.label: config.verbose_name.replace('_', ' ')
-    for config in values(django_apps.app_configs)
+    config.label: config.verbose_name.replace('_', ' ') for config in values(django_apps.app_configs)
 }
 
 joined_app_name_and_model = {
@@ -128,7 +127,15 @@ class Admin(Page):
         apps__auth_group__include = True
         parts__messages = Messages()
         parts__list_auth_user = dict(
-            auto__include=['username', 'email', 'first_name', 'last_name', 'is_staff', 'is_active', 'is_superuser'],
+            auto__include=[
+                'username',
+                'email',
+                'first_name',
+                'last_name',
+                'is_staff',
+                'is_active',
+                'is_superuser',
+            ],
             columns=dict(
                 username__filter=dict(
                     include=True,
@@ -146,7 +153,6 @@ class Admin(Page):
                     include=True,
                     freetext=True,
                 ),
-
                 is_staff__filter__include=True,
                 is_active__filter__include=True,
                 is_superuser__filter__include=True,
@@ -167,10 +173,12 @@ class Admin(Page):
     menu = Menu(
         sub_menu=dict(
             root=MenuItem(
-                url=lambda admin, **_: reverse('iommi.Admin.all_models'), display_name=gettext('iommi administration')
+                url=lambda admin, **_: reverse('iommi.Admin.all_models'),
+                display_name=gettext('iommi administration'),
             ),
             change_password=MenuItem(
-                url=lambda **_: reverse(Auth.change_password), display_name=gettext('Change password')
+                url=lambda **_: reverse(Auth.change_password),
+                display_name=gettext('Change password'),
             ),
             logout=MenuItem(url=lambda **_: reverse(Auth.logout), display_name=gettext('Logout')),
         ),
@@ -182,7 +190,9 @@ class Admin(Page):
         for k in apps.keys():
             assert (
                 k in joined_app_name_and_model
-            ), f'{k} is not a valid app/model key.\n\nValid keys:\n    ' + '\n    '.join(sorted(joined_app_name_and_model))
+            ), f'{k} is not a valid app/model key.\n\nValid keys:\n    ' + '\n    '.join(
+                sorted(joined_app_name_and_model)
+            )
 
         super(Admin, self).__init__(parts=parts, apps=apps, **kwargs)
 
@@ -211,7 +221,12 @@ class Admin(Page):
                 pk=kwargs.pop('pk', None),
             ).refine_done()
 
-            if not self.has_permission(request, instance=final_page.instance, model=final_page.model, operation=final_page.operation):
+            if not self.has_permission(
+                request,
+                instance=final_page.instance,
+                model=final_page.model,
+                operation=final_page.operation,
+            ):
                 raise Http404()
 
             view = build_as_view_wrapper(final_page)
@@ -230,18 +245,12 @@ class Admin(Page):
 
         table = self.parts.get('table')
         if table is not None:
-            setdefaults_path(
-                self.parts,
-                **{part_name: flatten(table)}
-            )
+            setdefaults_path(self.parts, **{part_name: flatten(table)})
             self.parts.table = None
 
         form = self.parts.get('form')
         if form is not None:
-            setdefaults_path(
-                self.parts,
-                **{part_name: flatten(form)}
-            )
+            setdefaults_path(self.parts, **{part_name: flatten(form)})
             self.parts.form = None
 
         def should_throw_away(k, v):
@@ -283,7 +292,6 @@ class Admin(Page):
         operation='all_models',
     )
     def all_models(cls, table=None, **kwargs):
-
         def rows(admin, **_):
             for app_name, models in items(django_apps.all_models):
                 has_yielded_header = False
@@ -356,7 +364,9 @@ class Admin(Page):
             ),
             actions=dict(
                 create=dict(
-                    display_name=lambda page, **_: gettext('Create %(model_name)s') % dict(model_name=page.model._meta.verbose_name),
+                    display_name=lambda page, **_: (
+                        gettext('Create %(model_name)s') % dict(model_name=page.model._meta.verbose_name)
+                    ),
                     attrs__href='create/',
                 ),
             ),
@@ -433,10 +443,26 @@ class Admin(Page):
         return Struct(
             urlpatterns=[
                 path('', cls.all_models().as_view(), name='iommi.Admin.all_models'),
-                path('<app_name>/<model_name>/', cls.list().as_view(), name='iommi.Admin.list'),
-                path('<app_name>/<model_name>/create/', cls.create().as_view(), name='iommi.Admin.create'),
-                path('<app_name>/<model_name>/<int:pk>/edit/', cls.edit().as_view(), name='iommi.Admin.edit'),
-                path('<app_name>/<model_name>/<int:pk>/delete/', cls.delete().as_view(), name='iommi.Admin.delete'),
+                path(
+                    '<app_name>/<model_name>/',
+                    cls.list().as_view(),
+                    name='iommi.Admin.list',
+                ),
+                path(
+                    '<app_name>/<model_name>/create/',
+                    cls.create().as_view(),
+                    name='iommi.Admin.create',
+                ),
+                path(
+                    '<app_name>/<model_name>/<int:pk>/edit/',
+                    cls.edit().as_view(),
+                    name='iommi.Admin.edit',
+                ),
+                path(
+                    '<app_name>/<model_name>/<int:pk>/delete/',
+                    cls.delete().as_view(),
+                    name='iommi.Admin.delete',
+                ),
             ]
             + Auth.urls().urlpatterns
         )

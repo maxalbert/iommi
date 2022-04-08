@@ -1,3 +1,4 @@
+import inspect
 import json
 from abc import abstractmethod
 from typing import (
@@ -5,7 +6,6 @@ from typing import (
     Dict,
     Union,
 )
-import inspect
 
 from tri_declarative import (
     dispatch,
@@ -147,7 +147,10 @@ class Part(Traversable):
             assert False  # This has already been checked in request_data()
 
         dispatch_commands = {key: value for key, value in items(req_data) if key.startswith(dispatch_prefix)}
-        assert len(dispatch_commands) in (0, 1), 'You can only have one or no dispatch commands'
+        assert len(dispatch_commands) in (
+            0,
+            1,
+        ), 'You can only have one or no dispatch commands'
         if dispatch_commands:
             dispatch_target, value = next(iter(dispatch_commands.items()))
             try:
@@ -228,7 +231,11 @@ def render_root(*, part, context, **render):
         container=Container(_name='Container').refine_done(parent=part).bind(parent=part),
         content=content,
         title=title if title not in (None, MISSING) else '',
-        iommi_debug_panel=iommi_debug_panel(part) if iommi_debug_on() and '_iommi_disable_debug_panel' not in part.get_request().GET else '',
+        iommi_debug_panel=(
+            iommi_debug_panel(part)
+            if (iommi_debug_on() and '_iommi_disable_debug_panel' not in part.get_request().GET)
+            else ''
+        ),
         assets=assets,
         **(part.context if isinstance(part, Page) else {}),
         **context,
@@ -241,7 +248,10 @@ def render_root(*, part, context, **render):
         + content_block_name
         + ' %}{{ iommi_debug_panel }}{{ content }}{% endblock %}'
     )
-    return get_template_from_string(template_string).render(context=context, request=part.get_request())
+    return get_template_from_string(template_string).render(
+        context=context,
+        request=part.get_request(),
+    )
 
 
 PartType = Union[Part, str, Template]

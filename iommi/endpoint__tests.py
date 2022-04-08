@@ -148,15 +148,17 @@ def test_invalid_enpoint_path(settings):
     with pytest.raises(InvalidEndpointPathException) as e:
         p.render_to_response()
 
-    assert str(e.value) == """
+    assert (
+        str(e.value)
+        == """\
 Given path /foo not found.
     Short alternatives:
         ''
         debug_tree
     Long alternatives:
         ''
-        endpoints/debug_tree
-""".strip()
+        endpoints/debug_tree"""
+    )
 
 
 def test_unsupported_request_method():
@@ -238,9 +240,7 @@ def test_perform_post_dispatch_error_message():
     with pytest.raises(InvalidEndpointPathException) as e:
         perform_post_dispatch(root=target, path='/banana', value='')
 
-    assert (
-        str(e.value) == "Target <tests.helpers.Fruit banana (bound) path:'banana'> has no registered post_handler"
-    )
+    assert str(e.value) == "Target <tests.helpers.Fruit banana (bound) path:'banana'> has no registered post_handler"
 
 
 def test_path_join():

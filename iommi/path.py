@@ -12,7 +12,6 @@ from django.http import Http404
 
 from iommi.base import items
 
-
 _camel_to_snake_regex = re.compile(r'(?<!^)(?=[A-Z])')
 
 
@@ -54,16 +53,12 @@ def register_advanced_path_decoding(conf):
         finally:
             for key in registered_keys:
                 del _path_component_to_decode_data[key]
+
     return _unregister()
 
 
 def register_path_decoding(*models):
-    return register_advanced_path_decoding(
-        {
-            model: _default_decoder
-            for model in models
-        }
-    )
+    return register_advanced_path_decoding({model: _default_decoder for model in models})
 
 
 def decode_path_components(request, **kwargs):
@@ -101,12 +96,11 @@ def decode_path_components(request, **kwargs):
 
     return {
         **{k: v for k, v in items(kwargs) if k not in decoded_keys},
-        **decoded_kwargs
+        **decoded_kwargs,
     }
 
 
 def decode_path(f):
-
     @functools.wraps(f)
     def decode_path_wrapper(request, **kwargs):
         decoded_kwargs = decode_path_components(request, **kwargs)

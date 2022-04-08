@@ -235,27 +235,47 @@ def test_render_not_included_fragment():
 
 def test_fragment__render__simple_cases():
     assert format_html('{}', html.h1('foo').bind(parent=None)) == '<h1>foo</h1>'
-    assert format_html('{}', Fragment(children__child='foo<foo>').bind(parent=None)) == 'foo&lt;foo&gt;'
+    assert (
+        format_html(
+            '{}',
+            Fragment(
+                children__child='foo<foo>',
+            ).bind(parent=None),
+        )
+        == 'foo&lt;foo&gt;'
+    )
 
     assert fragment__render(Fragment(include=False).refine_done(), {}) == ''
 
 
 def test_fragment_repr():
     assert (
-        repr(Fragment(tag='foo', attrs=Attrs(None, **{'foo-bar': 'baz'})).refine_done())
+        repr(
+            Fragment(
+                tag='foo',
+                attrs=Attrs(None, **{'foo-bar': 'baz'}),
+            ).refine_done()
+        )
         == "<Fragment tag:foo attrs:{'class': Namespace(), 'style': Namespace(), 'foo-bar': 'baz'}>"
     )
 
 
 def test_fragment_repr_not_done():
     assert (
-        repr(Fragment(tag='foo', attrs=Attrs(None, **{'foo-bar': 'baz'})))
+        repr(
+            Fragment(
+                tag='foo',
+                attrs=Attrs(None, **{'foo-bar': 'baz'}),
+            )
+        )
         == "<Fragment>"
     )
 
 
 def test_h_tag_callable():
-    p = Page(title=lambda request, **_: request.GET['foo']).bind(request=req('get', foo='title here'))
+    p = Page(
+        title=lambda request, **_: request.GET['foo'],
+    ).bind(request=req('get', foo='title here'))
     assert '<h1>Title here</h1>' in p.__html__()
 
 
@@ -269,7 +289,10 @@ def test_fragment_meta():
 
 
 def test_fragment_template_as_child():
-    f = Fragment(Template('<div>{{ fragment.extra.foo }}</div> {{ request.GET.param }}'), extra__foo=7)
+    f = Fragment(
+        Template('<div>{{ fragment.extra.foo }}</div> {{ request.GET.param }}'),
+        extra__foo=7,
+    )
     assert str(f.bind(request=req('get', param=11))) == '<div>7</div> 11'
 
 
@@ -277,14 +300,14 @@ def test_fragment_template_as_template_kwarg():
     f = Fragment(
         'child text',
         template=Template('<div>{{ fragment.extra.foo }}</div> {{ rendered_children }} {{ request.GET.param }}'),
-        extra__foo=7
+        extra__foo=7,
     )
     assert str(f.bind(request=req('get', param=11))) == '<div>7</div> child text 11'
 
 
 def test_foo():
     f = Fragment(
-        children__child=Fragment('child')
+        children__child=Fragment('child'),
     )
     assert f.bind().__html__() == 'child'
     assert f.bind().__html__() == 'child'

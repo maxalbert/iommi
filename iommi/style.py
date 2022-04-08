@@ -3,7 +3,8 @@ from contextlib import contextmanager
 from typing import (
     Any,
     List,
-    Type, Union,
+    Type,
+    Union,
 )
 
 from django.conf import settings
@@ -12,7 +13,6 @@ from tri_declarative import (
     EMPTY,
     get_shortcuts_by_name,
     Namespace,
-    setdefaults_path,
 )
 
 from iommi.base import (
@@ -55,7 +55,14 @@ class Style:
         sub_styles=EMPTY,
     )
     def __init__(
-        self, *bases, base_template=None, content_block=None, root=None, internal=False, sub_styles=None, **kwargs
+        self,
+        *bases,
+        base_template=None,
+        content_block=None,
+        root=None,
+        internal=False,
+        sub_styles=None,
+        **kwargs,
     ):
         self.name = None
         self.internal = internal
@@ -78,7 +85,12 @@ class Style:
         self.root = {k: v for k, v in items(Namespace(*(base.root for base in bases), root)) if v is not None}
         self.config = Namespace(*[x.config for x in bases], recursive_namespace(kwargs))
         self.sub_styles = {
-            k: v if isinstance(v, Style) else Style(self, **v)
+            k: v
+            if isinstance(v, Style)
+            else Style(
+                self,
+                **v,
+            )
             for k, v in items(sub_styles)
         }
         for name, sub_style in items(self.sub_styles):
@@ -138,6 +150,7 @@ def register_style(name, style):
             yield style
         finally:
             unregister_style(name)
+
     return _unregister()
 
 

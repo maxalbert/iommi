@@ -1,12 +1,12 @@
 import pytest
 from django.http import HttpResponse
 from django.template import RequestContext
+from django.test import override_settings
 from django.utils.safestring import (
     mark_safe,
     SafeText,
 )
 from django.views.decorators.csrf import csrf_exempt
-from django.test import override_settings
 from tri_struct import Struct
 
 from iommi import (
@@ -94,7 +94,10 @@ def test_crash_in_templates():
     with pytest.raises(Exception) as e:
         Template('{{ foo }}').render(context=RequestContext(req('get')))
 
-    assert str(e.value) == 'Tried to render non-existent variable foo' or str(e.value) == "Undefined template variable 'foo' in '<unknown source>'"
+    assert (
+        str(e.value) == 'Tried to render non-existent variable foo'
+        or str(e.value) == "Undefined template variable 'foo' in '<unknown source>'"
+    )
 
     # ...but inside if it's fine
     assert Template('{% if foo %}foo{% endif %}').render(context=RequestContext(req('get'))) == ''
@@ -137,4 +140,7 @@ def test_not_bound_yet_error():
     with pytest.raises(AssertionError) as e:
         Page().iommi_dunder_path
 
-    assert str(e.value) == 'This object is not bound. You need to call `.bind(request=request)` before you can call this function.'
+    assert (
+        str(e.value)
+        == 'This object is not bound. You need to call `.bind(request=request)` before you can call this function.'
+    )

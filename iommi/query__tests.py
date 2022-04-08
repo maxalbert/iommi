@@ -103,7 +103,10 @@ def test_include():
         )
 
     assert list(ShowQuery().bind(request=req('get', foo='hide')).filters.keys()) == ['foo']
-    assert list(ShowQuery().bind(request=req('get', foo='include')).filters.keys()) == ['foo', 'bar']
+    assert list(ShowQuery().bind(request=req('get', foo='include')).filters.keys()) == [
+        'foo',
+        'bar',
+    ]
 
 
 def test_empty_string(MyTestQuery):
@@ -199,7 +202,10 @@ def test_request_to_q_advanced(MyTestQuery):
 
     q = MyTestQuery().bind(request=req('get'))
     query = MyTestQuery().bind(
-        request=req('get', **{q.get_advanced_query_param(): 'foo_name="asd" and (bar_name = 7 or baz_name = 11)'})
+        request=req(
+            'get',
+            **{q.get_advanced_query_param(): 'foo_name="asd" and (bar_name = 7 or baz_name = 11)'},
+        )
     )
     assert repr(query.get_q()) == repr(
         Q(**{'foo__iexact': 'asd'}) & (Q(**{'bar__exact': '7'}) | Q(**{'baz__iexact': '11'}))
@@ -454,7 +460,10 @@ def test_missing_choices():
     with pytest.raises(AssertionError, match='To use Filter.choice, you must pass the choices list'):
         Filter.choice().refine_done()
 
-    with pytest.raises(AssertionError, match='The convenience feature to automatically get the parameter model set only works for QuerySet instances'):
+    with pytest.raises(
+        AssertionError,
+        match='The convenience feature to automatically get the parameter model set only works for QuerySet instances',
+    ):
         Filter.choice_queryset().refine_done()
 
 
@@ -509,7 +518,10 @@ def test_choice_queryset():
         query2 = Query2().bind(
             request=req(
                 'get',
-                **{'-': '-', query2.get_advanced_query_param(): 'foo%s%s' % (invalid_op, str(random_valid_obj.foo))},
+                **{
+                    '-': '-',
+                    query2.get_advanced_query_param(): 'foo%s%s' % (invalid_op, str(random_valid_obj.foo)),
+                },
             ),
         )
         with pytest.raises(QueryException) as e:
@@ -574,7 +586,10 @@ def test_multi_choice_queryset():
     form = Query2().bind(request=req('get', **{'-': '-', 'foo': 'asdasdasdasd'})).form
     assert not form.is_valid()
     query2 = Query2().bind(
-        request=req('get', **{'-': '-', 'foo': [str(random_valid_obj.pk), str(random_valid_obj2.pk)]})
+        request=req(
+            'get',
+            **{'-': '-', 'foo': [str(random_valid_obj.pk), str(random_valid_obj2.pk)]},
+        )
     )
     form = query2.form
     assert form.is_valid(), form.get_errors()
@@ -598,7 +613,10 @@ def test_multi_choice_queryset():
         query2 = Query2().bind(
             request=req(
                 'get',
-                **{'-': '-', query2.get_advanced_query_param(): 'foo%s%s' % (invalid_op, str(random_valid_obj.foo))},
+                **{
+                    '-': '-',
+                    query2.get_advanced_query_param(): 'foo%s%s' % (invalid_op, str(random_valid_obj.foo)),
+                },
             )
         )
         with pytest.raises(QueryException) as e:
@@ -668,14 +686,11 @@ def test_endpoint_dispatch_errors():
 
     q = MyQuery().bind(request=req('get'))
 
-    assert (
-        perform_ajax_dispatch(
-            root=MyQuery().bind(request=req('get', **{q.get_advanced_query_param(): '!!'})),
-            path='/errors',
-            value='',
-        )
-        == {'global': ['Invalid syntax for query']}
-    )
+    assert perform_ajax_dispatch(
+        root=MyQuery().bind(request=req('get', **{q.get_advanced_query_param(): '!!'})),
+        path='/errors',
+        value='',
+    ) == {'global': ['Invalid syntax for query']}
     assert (
         perform_ajax_dispatch(
             root=MyQuery().bind(request=req('get', **{q.get_advanced_query_param(): 'foo=a'})),
@@ -684,14 +699,11 @@ def test_endpoint_dispatch_errors():
         )
         == {}
     )
-    assert (
-        perform_ajax_dispatch(
-            root=MyQuery().bind(request=req('get', foo='q')),
-            path='/errors',
-            value='',
-        )
-        == {'fields': {'foo': ['q not in available choices']}}
-    )
+    assert perform_ajax_dispatch(
+        root=MyQuery().bind(request=req('get', foo='q')),
+        path='/errors',
+        value='',
+    ) == {'fields': {'foo': ['q not in available choices']}}
 
 
 def test_filter_repr():
@@ -701,7 +713,10 @@ def test_filter_repr():
 @pytest.mark.django_db
 def test_nice_error_message():
     with pytest.raises(NoRegisteredSearchFieldException) as e:
-        value_to_str_for_query(Filter(search_fields=['custom_name_field']).refine_done(), NonStandardName(non_standard_name='foo'))
+        value_to_str_for_query(
+            Filter(search_fields=['custom_name_field']).refine_done(),
+            NonStandardName(non_standard_name='foo'),
+        )
 
     assert (
         str(e.value)
@@ -978,9 +993,7 @@ def test_choices_in_char_field_model():
     ChoicesModel(color='purple').save()
     ChoicesModel(color='orange').save()
 
-    query = Query(
-        auto__model=ChoicesModel,
-    ).bind(
+    query = Query(auto__model=ChoicesModel,).bind(
         request=req('get', color='purple'),
     )
 
@@ -994,7 +1007,9 @@ def test_choices_in_char_field_model():
         == value
     )
     assert (
-        query.form.fields.color.choice_display_name_formatter(value, **query.form.fields.color.iommi_evaluate_parameters())
+        query.form.fields.color.choice_display_name_formatter(
+            value, **query.form.fields.color.iommi_evaluate_parameters()
+        )
         == display_name
     )
     assert query.form.fields.color.choice_tuples == [
@@ -1012,9 +1027,7 @@ def test_choices_in_char_field_model_as_class():
     ChoicesClassModel(color='purple').save()
     ChoicesClassModel(color='orange').save()
 
-    query = Query(
-        auto__model=ChoicesClassModel,
-    ).bind(
+    query = Query(auto__model=ChoicesClassModel,).bind(
         request=req('get', color='orange'),
     )
 
@@ -1028,7 +1041,9 @@ def test_choices_in_char_field_model_as_class():
         == value
     )
     assert (
-        query.form.fields.color.choice_display_name_formatter(value, **query.form.fields.color.iommi_evaluate_parameters())
+        query.form.fields.color.choice_display_name_formatter(
+            value, **query.form.fields.color.iommi_evaluate_parameters()
+        )
         == label
     )
 

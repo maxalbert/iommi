@@ -268,6 +268,7 @@ def test_precedence_override_style_with_shortcut(foo_style):
     )
 
     with register_style('bar', bar_style):
+
         class MyPage(Page):
             foo = html.div('from declaration')
 

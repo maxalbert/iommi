@@ -11,6 +11,10 @@ from iommi._db_compat import (
 from iommi.action import Action
 from iommi.asset import Asset
 from iommi.base import MISSING
+from iommi.edit_table import (
+    EditColumn,
+    EditTable,
+)
 from iommi.form import (
     Field,
     Form,
@@ -47,10 +51,6 @@ from iommi.table import (
     register_column_factory,
     Table,
 )
-from iommi.edit_table import (
-    EditColumn,
-    EditTable,
-)
 
 setup_db_compat()
 
@@ -64,9 +64,10 @@ def render_if_needed(request, response):
         except Exception as e:
             filename, lineno = response._instantiated_at_info
             from iommi.synthetic_traceback import SyntheticException
-            fake = SyntheticException(tb=[
-                dict(filename=filename, f_lineno=lineno, function='<iommi declaration>', f_globals={}, f_locals={})
-            ])
+
+            fake = SyntheticException(
+                tb=[dict(filename=filename, f_lineno=lineno, function='<iommi declaration>', f_globals={}, f_locals={})]
+            )
 
             raise e from fake
     else:
@@ -75,6 +76,7 @@ def render_if_needed(request, response):
 
 def middleware(get_response):
     from django.db import connections
+
     atomic_request_connections = [db for db in connections.all() if db.settings_dict['ATOMIC_REQUESTS']]
     if any(atomic_request_connections):
         raise TypeError(

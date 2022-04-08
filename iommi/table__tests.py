@@ -695,6 +695,7 @@ def test_column_presets(NoSortTable):
 def test_column_select_shortcut_no_override_call_target(NoSortTable):
     class TestTable(NoSortTable):
         select = Column.select()
+
     TestTable().bind()
 
 
@@ -876,13 +877,20 @@ def test_bulk_edit_fk():
 
         foo = Column(bulk__include=True)
 
-    response = TestTable().bind(
-        request=req('post', **{
-            '_all_pks_': '1',
-            'bulk/foo': str(foo2.pk),
-            '-bulk/submit': '',
-        }),
-    ).render_to_response()
+    response = (
+        TestTable()
+        .bind(
+            request=req(
+                'post',
+                **{
+                    '_all_pks_': '1',
+                    'bulk/foo': str(foo2.pk),
+                    '-bulk/submit': '',
+                },
+            ),
+        )
+        .render_to_response()
+    )
 
     assert response.status_code == 302
     bar.refresh_from_db()
@@ -911,13 +919,20 @@ def test_bulk_edit_m2m():
             bulk__include=True,
         )
 
-    response = TestTable().bind(
-        request=req('post', **{
-            '_all_pks_': '1',
-            'bulk/foo': str(foo2.pk),
-            '-bulk/submit': '',
-        }),
-    ).render_to_response()
+    response = (
+        TestTable()
+        .bind(
+            request=req(
+                'post',
+                **{
+                    '_all_pks_': '1',
+                    'bulk/foo': str(foo2.pk),
+                    '-bulk/submit': '',
+                },
+            ),
+        )
+        .render_to_response()
+    )
 
     assert response.status_code == 302
     baz.refresh_from_db()
@@ -943,11 +958,7 @@ def test_bulk_edit_custom_response():
 @pytest.mark.skip('Django trips up on update when there is an annotation to a foreign table')
 @pytest.mark.django_db
 def test_django_broken_update():
-    TBar.objects.annotate(
-        a=F('foo__a'),
-    ).order_by(
-        'a',
-    ).update(
+    TBar.objects.annotate(a=F('foo__a')).order_by('a').update(
         c=True,
     )
 
@@ -974,11 +985,14 @@ def test_bulk_edit_with_annotate():
         )
 
     TestTable().bind(
-        request=req('post', **{
-            'pk_1': '',
-            'bulk/c': 'True',
-            '-bulk/submit': '',
-        }),
+        request=req(
+            'post',
+            **{
+                'pk_1': '',
+                'bulk/c': 'True',
+                '-bulk/submit': '',
+            },
+        ),
     ).render_to_response()
 
     x = TBar.objects.get()
@@ -1191,7 +1205,7 @@ def test_freetext_searching():
         columns=dict(
             foo__filter=dict(include=True, freetext=True),
             bar__filter=dict(include=True, freetext=True),
-        )
+        ),
     ).bind(request=req('get', freetext_search='a'))
 
     assert not t.query.form.get_errors()
@@ -2507,7 +2521,10 @@ def test_shortcuts_map_to_form_and_query(name, shortcut):
     if name in whitelist:
         return
 
-    if 'call_target' in getattr(shortcut, '__iommi_with_defaults_kwargs', []) and shortcut.__iommi_with_defaults_kwargs.call_target.attribute in whitelist:
+    if (
+        'call_target' in getattr(shortcut, '__iommi_with_defaults_kwargs', [])
+        and shortcut.__iommi_with_defaults_kwargs.call_target.attribute in whitelist
+    ):
         # shortcuts that in turn point to whitelisted ones are also whitelisted
         return
 
@@ -2641,7 +2658,8 @@ def test_csv_download():
 A,B,C,D,DANGER
 1,a,2.3,,\t=2+5+cmd|' /C calc'!A0
 2,b,5.0,,\t=2+5+cmd|' /C calc'!A0
-""")
+"""
+    )
 
 
 @pytest.mark.django_db
@@ -2656,7 +2674,7 @@ def test_csv_pagination():
         columns__b__extra_evaluated__report_name='B',
         columns__c__extra_evaluated__report_name='C',
         extra_evaluated__report_name='foo',
-        page_size=2
+        page_size=2,
     ).bind(request=req('get', **{'/csv': ''}))
     response = t.render_to_response()
     assert (
@@ -3678,7 +3696,7 @@ def test_nest_table_inside_form_does_not_crash_due_to_nested_forms():
     # This used to crash
     Form(
         auto__instance=TFoo(),
-        fields__a_table=Table(auto__model=TFoo)
+        fields__a_table=Table(auto__model=TFoo),
     ).bind(request=req('get'))
 
 
@@ -3716,9 +3734,7 @@ def test_text_choices():
     table = Table(
         auto__rows=ChoicesClassModel.objects.all(),
         columns__color__filter__include=True,
-    ).bind(
-        request=req('get', color='orange'),
-    )
+    ).bind(request=req('get', color='orange'))
 
     assert table.get_visible_rows().get().color == 'orange'
 
@@ -3726,13 +3742,9 @@ def test_text_choices():
     assert form.fields.color.choices == ['purple_thing-thing', 'orange']
 
     value, label = list(ChoicesClassModel.ColorChoices.choices)[0]
+    assert form.fields.color.choice_id_formatter(value, **form.fields.color.iommi_evaluate_parameters()) == value
     assert (
-        form.fields.color.choice_id_formatter(value, **form.fields.color.iommi_evaluate_parameters())
-        == value
-    )
-    assert (
-        form.fields.color.choice_display_name_formatter(value, **form.fields.color.iommi_evaluate_parameters())
-        == label
+        form.fields.color.choice_display_name_formatter(value, **form.fields.color.iommi_evaluate_parameters()) == label
     )
     assert form.fields.color.choice_tuples == [
         (None, '', '---', False, 0),

@@ -25,8 +25,9 @@ from iommi.style import (
     get_style_object,
     InvalidStyleConfigurationException,
     register_style,
+    resolve_style,
     Style,
-    validate_styles, resolve_style,
+    validate_styles,
 )
 from iommi.style_base import base
 from iommi.style_test_base import test
@@ -143,14 +144,20 @@ def test_style_menu():
     class MyMenu(Menu):
         item = MenuItem()
 
-    assert MyMenu().bind(request=req('get')).__html__() == '<nav><ul><li><a class="link" href="/item/">Item</a></li></ul></nav>'
+    assert (
+        MyMenu().bind(request=req('get')).__html__()
+        == '<nav><ul><li><a class="link" href="/item/">Item</a></li></ul></nav>'
+    )
 
 
 def test_style_menu_active():
     class MyMenu(Menu):
         item = MenuItem(url='/')
 
-    assert MyMenu().bind(request=req('get')).__html__() == '<nav><ul><li><a class="active link" href="/">Item</a></li></ul></nav>'
+    assert (
+        MyMenu().bind(request=req('get')).__html__()
+        == '<nav><ul><li><a class="active link" href="/">Item</a></li></ul></nav>'
+    )
 
 
 def test_apply_checkbox_style():
@@ -167,14 +174,9 @@ def test_apply_checkbox_style():
     form = form.bind(request=None)
 
     assert get_style_object(form.fields.foo) == get_global_style('bootstrap')
-    assert (
-        get_style_data_for_object(
-            get_global_style('bootstrap'),
-            obj=form.fields.foo,
-            is_root=False,
-        )['attrs']
-        == {'class': {'form-group': True, 'form-check': True}}
-    )
+    assert get_style_data_for_object(get_global_style('bootstrap'), obj=form.fields.foo, is_root=False)['attrs'] == {
+        'class': {'form-group': True, 'form-check': True}
+    }
     assert render_attrs(form.fields.foo.attrs) == ' class="form-check form-group"'
     assert (
         render_attrs(form.fields.foo.input.attrs) == ' class="form-check-input" id="id_foo" name="foo" type="checkbox"'
@@ -201,14 +203,17 @@ def test_validate_default_styles():
 
 
 def test_error_when_trying_to_style_non_existent_attribute():
-    with pytest.raises(TypeError, match=(
-        'Fragment object has no refinable attribute\\(s\\): "something_that_does_not_exist".\n'
-        + 'Available attributes:\n'
-        + '    after\n'
-        + '    assets\n'
-        + '    attrs\n'
-        # ...
-    )):
+    with pytest.raises(
+        TypeError,
+        match=(
+            'Fragment object has no refinable attribute\\(s\\): "something_that_does_not_exist".\n'
+            + 'Available attributes:\n'
+            + '    after\n'
+            + '    assets\n'
+            + '    attrs\n'
+            # ...
+        ),
+    ):
         Fragment(iommi_style=Style(Fragment__something_that_does_not_exist='!!!')).refine_done()
 
 
@@ -224,7 +229,11 @@ def test_error_message_for_invalid_style():
     )
 
     with pytest.raises(InvalidStyleConfigurationException) as e:
-        validate_styles(additional_classes=[Foo], default_classes=[], styles=dict(foo=style))
+        validate_styles(
+            additional_classes=[Foo],
+            default_classes=[],
+            styles=dict(foo=style),
+        )
 
     assert (
         str(e.value)
@@ -444,7 +453,7 @@ def test_style_inheritance():
             iommi_style='base',
             parts__form=Form(
                 iommi_style='custom_style',
-            )
+            ),
         )
         page = page2.bind()
         assert page.iommi_style.name == 'base'
@@ -472,7 +481,7 @@ def test_style_inheritance_tricky():
             iommi_style=custom_style,
             parts__form=Form(
                 iommi_style='custom_sub_style',
-            )
+            ),
         )
         page = page1.bind()
         assert page.iommi_style.name == 'custom_style'
@@ -519,11 +528,14 @@ def test_style_on_form_as_root(styled_form):
 
 
 def test_style_on_child():
-    with register_style('foo', Style(
-        test,
-        Fragment__extra__foo='foo',
-        Table__tbody__extra__bar='bar',
-    )):
+    with register_style(
+        'foo',
+        Style(
+            test,
+            Fragment__extra__foo='foo',
+            Table__tbody__extra__bar='bar',
+        ),
+    ):
         table = Table(iommi_style='foo').bind()
         assert table.tbody.extra.foo == 'foo'
         assert table.tbody.extra.bar == 'bar'

@@ -45,15 +45,12 @@ from tri_declarative import (
 )
 from tri_struct import Struct
 
-from iommi import (
-    Action,
-    Fragment,
-)
 from iommi._web_compat import (
     render_template,
     Template,
     ValidationError,
 )
+from iommi.action import Action
 from iommi.base import (
     items,
     keys,
@@ -73,6 +70,9 @@ from iommi.form import (
     Form,
     int_parse,
     time_parse,
+)
+from iommi.fragment import (
+    Fragment,
 )
 from iommi.from_model import (
     AutoConfig,
@@ -238,7 +238,6 @@ class Filter(Part):
         attr=MISSING,
         search_fields=MISSING,
         field__required=False,
-
         is_valid_filter=default_filter__is_valid_filter,
         query_name=lambda filter, **_: filter.iommi_name(),
     )
@@ -253,7 +252,9 @@ class Filter(Part):
 
     def on_refine_done(self):
         if 'choice' in getattr(self, '__tri_declarative_shortcut_stack', []):
-            assert self.iommi_namespace.get('choices') is not None, 'To use Filter.choice, you must pass the choices list'
+            assert (
+                self.iommi_namespace.get('choices') is not None
+            ), 'To use Filter.choice, you must pass the choices list'
 
         model_field = self.model_field
         if model_field and model_field.remote_field:
@@ -651,7 +652,13 @@ class Query(Part):
         self.query_advanced_value = None
         self.query_error = None
 
-        refine_done_members(self, name='filters', members_from_namespace=self.filters, members_from_declared=self.get_declared('_filters_dict'), cls=self.get_meta().member_class)
+        refine_done_members(
+            self,
+            name='filters',
+            members_from_namespace=self.filters,
+            members_from_declared=self.get_declared('_filters_dict'),
+            cls=self.get_meta().member_class,
+        )
 
         self._on_refine_done_form()
 
@@ -704,7 +711,9 @@ class Query(Part):
                 model_field=filter.model_field,
                 attr=name if filter.attr is MISSING else filter.attr,
                 help__include=False,
-                include=lambda query, field, **_: field.iommi_name() in query.filters and not query.filters[field.iommi_name()].freetext,
+                include=lambda query, field, **_: (
+                    field.iommi_name() in query.filters and not query.filters[field.iommi_name()].freetext
+                ),
             )
 
         # Remove fields from the form that correspond to non-included filters
@@ -719,17 +728,23 @@ class Query(Part):
         form_args = self.form
 
         # noinspection PyCallingNonCallable
-        self.form: Form = self.get_meta().form_class(**setdefaults_path(
-            Namespace(),
-            form_args,
-            _name='form',
-            fields=declared_fields,
-            attrs__method='get',
-            actions__submit=dict(
-                attrs={'data-iommi-filter-button': ''},
-                display_name=gettext('Filter'),
-            ),
-        )).refine_done(parent=self)
+        self.form: Form = (
+            self.get_meta()
+            .form_class(
+                **setdefaults_path(
+                    Namespace(),
+                    form_args,
+                    _name='form',
+                    fields=declared_fields,
+                    attrs__method='get',
+                    actions__submit=dict(
+                        attrs={'data-iommi-filter-button': ''},
+                        display_name=gettext('Filter'),
+                    ),
+                )
+            )
+            .refine_done(parent=self)
+        )
 
     def on_bind(self) -> None:
         # Prevent the nested form from thinking it's a part of a nested form set up
@@ -1035,9 +1050,7 @@ class Query(Part):
     @classmethod
     @dispatch()
     def filters_from_model(cls, **kwargs):
-        return create_members_from_model(
-            member_class=cls.get_meta().member_class, **kwargs
-        )
+        return create_members_from_model(member_class=cls.get_meta().member_class, **kwargs)
 
     @classmethod
     @dispatch()
@@ -1049,6 +1062,6 @@ class Query(Part):
         )
 
         model, rows = model_and_rows(model, rows)
-        assert model is not None or rows is not None, "auto__model or auto__rows must be specified"
+        assert model is not None or rows is not None, 'auto__model or auto__rows must be specified'
         filters = cls.filters_from_model(model=model, include=include, exclude=exclude)
         return model, rows, filters

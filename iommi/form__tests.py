@@ -214,7 +214,7 @@ def test_required_multi_choice():
                 pass  # pragma: no cover
 
     form = MyForm()
-    target_marker = form.bind(request=req('get'),).actions.submit.own_target_marker()
+    target_marker = form.bind(request=req('get')).actions.submit.own_target_marker()
 
     bound_form = form.bind(request=req('post', **{target_marker: ''}))
 
@@ -232,7 +232,10 @@ def test_required(MyTestForm):
 
 def test_required_with_falsy_option():
     class MyForm(Form):
-        foo = Field.choice(choices=[0, 1], parse=lambda string_value, **_: int(string_value))
+        foo = Field.choice(
+            choices=[0, 1],
+            parse=lambda string_value, **_: int(string_value),
+        )
 
     form = MyForm().bind(request=req('post', **{'foo': '0', '-submit': ''}))
     assert form.fields.foo.value == 0
@@ -418,7 +421,8 @@ def test_parse_errors(MyTestForm):
 
     assert form.fields['joined'].raw_data == 'foo'
     assert_errors_and_matches_reg_exp(
-        form.fields['joined']._errors, 'Time data "foo" does not match any of the formats .*'
+        form.fields['joined']._errors,
+        'Time data "foo" does not match any of the formats .*',
     )
     assert form.fields['joined'].parsed_data is None
     assert form.fields['joined'].value is None
@@ -433,7 +437,8 @@ def test_parse_errors(MyTestForm):
 
     assert form.fields['a_date'].raw_data == 'foo'
     assert_errors_and_matches_reg_exp(
-        form.fields['a_date']._errors, 'Time data "foo" does not match any of the formats.*'
+        form.fields['a_date']._errors,
+        'Time data "foo" does not match any of the formats.*',
     )
     assert form.fields['a_date'].parsed_data is None
     assert form.fields['a_date'].value is None
@@ -441,14 +446,17 @@ def test_parse_errors(MyTestForm):
 
     assert form.fields['a_time'].raw_data == 'bar'
     assert_errors_and_matches_reg_exp(
-        form.fields['a_time']._errors, 'Time data "bar" does not match any of the formats.*'
+        form.fields['a_time']._errors,
+        'Time data "bar" does not match any of the formats.*',
     )
     assert form.fields['a_time'].parsed_data is None
     assert form.fields['a_time'].value is None
 
     assert form.fields['multi_choice_field'].raw_data == ['q', 'w']
     assert_errors_and_matches_reg_exp(
-        form.fields['multi_choice_field']._errors, "[qw] not in available choices", count=2
+        form.fields['multi_choice_field']._errors,
+        "[qw] not in available choices",
+        count=2,
     )
     assert form.fields['multi_choice_field'].parsed_data == ['q', 'w']
     assert form.fields['multi_choice_field'].value is None
@@ -486,7 +494,11 @@ def test_post_validation_and_error_checking_initial():
 
     assert timeline == [
         {'mode': 'initials_from_get', 'is_valid': True, 'errors': {}},
-        {'mode': 'initials_from_get', 'is_valid': False, 'errors': {'fields': {'first': {'first error'}}}},
+        {
+            'mode': 'initials_from_get',
+            'is_valid': False,
+            'errors': {'fields': {'first': {'first error'}}},
+        },
         {
             'mode': 'initials_from_get',
             'is_valid': False,
@@ -535,7 +547,11 @@ def test_post_validation_and_error_checking_full():
 
     assert timeline == [
         {'mode': 'full_form_from_request', 'is_valid': True, 'errors': {}},
-        {'mode': 'full_form_from_request', 'is_valid': False, 'errors': {'fields': {'first': {'first error'}}}},
+        {
+            'mode': 'full_form_from_request',
+            'is_valid': False,
+            'errors': {'fields': {'first': {'first error'}}},
+        },
         {
             'mode': 'full_form_from_request',
             'is_valid': False,
@@ -544,7 +560,10 @@ def test_post_validation_and_error_checking_full():
         {
             'mode': 'full_form_from_request',
             'is_valid': False,
-            'errors': {'fields': {'first': {'first error'}, 'second': {'second error'}}, 'global': {'global error'}},
+            'errors': {
+                'fields': {'first': {'first error'}, 'second': {'second error'}},
+                'global': {'global error'},
+            },
         },
     ]
 
@@ -578,17 +597,9 @@ def test_initial_from_instance_override():
 
 
 def test_initial_from_instance_is_list():
-    assert (
-        Form(
-            instance=Struct(a=Struct(b=[7])),
-            fields__foo=Field(attr='a__b', is_list=True),
-        )
-        .bind(
-            request=req('get'),
-        )
-        .fields.foo.initial
-        == [7]
-    )
+    assert Form(instance=Struct(a=Struct(b=[7])), fields__foo=Field(attr='a__b', is_list=True),).bind(
+        request=req('get')
+    ).fields.foo.initial == [7]
 
 
 def test_non_editable_from_initial():
@@ -804,14 +815,9 @@ def test_setattr_path():
 
 
 def test_multi_select_with_one_value_only():
-    assert (
-        Form(
-            fields__foo=Field.multi_choice(_name='foo', choices=['a', 'b']),
-        )
-        .bind(request=req('get', foo=['a']))
-        .fields.foo.value
-        == ['a']
-    )
+    assert Form(fields__foo=Field.multi_choice(_name='foo', choices=['a', 'b']),).bind(
+        request=req('get', foo=['a'])
+    ).fields.foo.value == ['a']
 
 
 def test_render_misc_attributes():
@@ -913,7 +919,10 @@ def test_radio_full_render():
 
 
 def test_hidden():
-    soup = BeautifulSoup(Form(fields__foo=Field.hidden()).bind(request=req('get', foo='1')).__html__(), 'html.parser')
+    soup = BeautifulSoup(
+        Form(fields__foo=Field.hidden()).bind(request=req('get', foo='1')).__html__(),
+        'html.parser',
+    )
     x = soup.find(id='id_foo')
     assert get_attrs(x, ['type', 'name', 'value']) == dict(type='hidden', name='foo', value='1')
 
@@ -1003,10 +1012,7 @@ def test_help_text_from_model2():
     from tests.models import Foo, Bar
 
     # simple integer field
-    form = Form(
-        auto__model=Foo,
-        auto__include=['foo'],
-    ).bind(
+    form = Form(auto__model=Foo, auto__include=['foo'],).bind(
         request=req('get', foo='1'),
     )
     assert list(form.fields.keys()) == ['foo']
@@ -1055,7 +1061,10 @@ def test_missing_choices():
     with pytest.raises(AssertionError, match='To use Field.choice, you must pass the choices list'):
         Field.multi_choice().refine_done()
 
-    with pytest.raises(AssertionError, match='The convenience feature to automatically get the parameter model set only works for QuerySet instances or if you specify model_field'):
+    with pytest.raises(
+        AssertionError,
+        match='The convenience feature to automatically get the parameter model set only works for QuerySet instances or if you specify model_field',
+    ):
         Field.choice_queryset().refine_done()
 
 
@@ -1139,9 +1148,7 @@ def test_choice_queryset_do_not_look_up_by_default():
     assert form.fields.foo.input.template is not None
 
     # language=HTML
-    expected = (
-        '<select class="select2_enhance" data-choices-endpoint="/choices" data-placeholder="" id="id_foo" name="foo">\n<option label="foo" selected="selected" value="1">foo</option>\n</select>'
-    )
+    expected = '<select class="select2_enhance" data-choices-endpoint="/choices" data-placeholder="" id="id_foo" name="foo">\n<option label="foo" selected="selected" value="1">foo</option>\n</select>'
     assert str(BeautifulSoup(form.__html__(), "html.parser").select('select')[0]) == expected
 
 
@@ -1466,16 +1473,13 @@ def test_field_from_model_many_to_many_editable():
 def test_field_from_model_many_to_one_foreign_key():
     from tests.models import Bar
 
-    assert (
-        set(
-            Form(auto__model=Bar)
-            .bind(
-                request=req('get'),
-            )
-            .fields.keys()
+    assert set(
+        Form(auto__model=Bar)
+        .bind(
+            request=req('get'),
         )
-        == {'foo'}
-    )
+        .fields.keys()
+    ) == {'foo'}
 
 
 @pytest.mark.django
@@ -1685,7 +1689,12 @@ def test_render_custom():
     sentinel = '!!custom!!'
     assert (
         sentinel
-        in Form(fields__foo=Field(initial='not sentinel value', render_value=lambda form, field, value: sentinel))
+        in Form(
+            fields__foo=Field(
+                initial='not sentinel value',
+                render_value=lambda form, field, value: sentinel,
+            )
+        )
         .bind(request=req('get'))
         .__html__()
     )
@@ -1842,16 +1851,9 @@ def test_form_errors_function():
     def post_validation(form, **_):
         form.add_error('global error')
 
-    assert (
-        MyForm(
-            post_validation=post_validation,
-        )
-        .bind(
-            request=req('post', **{'-submit': '', 'foo': 'asd'}),
-        )
-        .get_errors()
-        == {'global': {'global error'}, 'fields': {'foo': {'field error'}}}
-    )
+    assert MyForm(post_validation=post_validation,).bind(
+        request=req('post', **{'-submit': '', 'foo': 'asd'}),
+    ).get_errors() == {'global': {'global error'}, 'fields': {'foo': {'field error'}}}
 
 
 @pytest.mark.django
@@ -1970,12 +1972,9 @@ def test_ajax_config_and_validate():
     request = req('get')
     form = MyForm()
     form = form.bind(request=request)
-    assert (
-        dict(
-            name='foo',
-        )
-        == perform_ajax_dispatch(root=form, path='/fields/foo/endpoints/config', value=None)
-    )
+    assert dict(
+        name='foo',
+    ) == perform_ajax_dispatch(root=form, path='/fields/foo/endpoints/config', value=None)
 
     assert dict(valid=True, errors=[]) == perform_ajax_dispatch(
         root=form, path='/fields/foo/endpoints/validate', value='new value'
@@ -2083,7 +2082,11 @@ def test_render_temlate_none():
 
 def test_render_template_template_object():
     assert (
-        render_template(request=req('get'), context=dict(a='1'), template=Template(template_string='foo {{a}} bar'))
+        render_template(
+            request=req('get'),
+            context=dict(a='1'),
+            template=Template(template_string='foo {{a}} bar'),
+        )
         == 'foo 1 bar'
     )
 
@@ -2136,7 +2139,13 @@ def test_choice_post_validation_chains_empty_choice_when_required_false():
     form = MyForm().bind(request=req('get'))
 
     assert list(form.fields.foo.choice_tuples) == [
-        (None, '', form.fields.foo.empty_label, True, 0,),
+        (
+            None,
+            '',
+            form.fields.foo.empty_label,
+            True,
+            0,
+        ),
         (1, '1', '1', False, 1),
         (2, '2', '2', False, 2),
         (3, '3', '3', False, 3),
@@ -2372,7 +2381,10 @@ def test_dunder_name_for_column():
     with pytest.raises(AssertionError) as e:
         FooForm().bind(request=None)
 
-    assert str(e.value) == "Don't specify nested attrs using the field name. You lose the ability to include more config from other places. Pick another name and give the path as attr instead"
+    assert (
+        str(e.value)
+        == "Don't specify nested attrs using the field name. You lose the ability to include more config from other places. Pick another name and give the path as attr instead"
+    )
 
 
 def test_help_text_for_boolean_tristate():
@@ -2428,9 +2440,7 @@ def test_shortcut_to_subclass():
         @classmethod
         @with_defaults()
         def my_shortcut(cls, **kwargs):
-            return cls(
-                **kwargs
-            )  # pragma: no cover: we aren't testing that this shortcut is implemented correctly
+            return cls(**kwargs)  # pragma: no cover: we aren't testing that this shortcut is implemented correctly
 
     assert isinstance(MyField.my_shortcut(), MyField)
 
@@ -2438,9 +2448,7 @@ def test_shortcut_to_subclass():
         @classmethod
         @with_defaults
         def choices(cls, **kwargs):
-            return cls(
-                **kwargs
-            )  # pragma: no cover: we aren't testing that this shortcut is implemented correctly
+            return cls(**kwargs)  # pragma: no cover: we aren't testing that this shortcut is implemented correctly
 
     field = MyField.choice(choices=[]).refine_done()
     assert isinstance(field, MyField)
@@ -2518,7 +2526,13 @@ def test_render_create_object():
     assert form.fields['f_float'].initial == 2
     assert form.fields['f_float'].value == 2
     assert form.fields['f_bool'].value is None
-    assert set(form.fields.keys()) == {'f_int', 'f_float', 'f_bool', 'f_foreign_key', 'f_many_to_many'}
+    assert set(form.fields.keys()) == {
+        'f_int',
+        'f_float',
+        'f_bool',
+        'f_foreign_key',
+        'f_many_to_many',
+    }
 
 
 @pytest.mark.django_db
@@ -2728,7 +2742,12 @@ def test_edit_object_foreign_related_attribute():
 
 
 def test_redirect_default_case():
-    sentinel1, sentinel2, sentinel3, sentinel4 = object(), '#sentinel#', object(), object()
+    sentinel1, sentinel2, sentinel3, sentinel4 = (
+        object(),
+        '#sentinel#',
+        object(),
+        object(),
+    )
     expected = dict(redirect_to=sentinel2, request=sentinel3, form=sentinel4)
 
     class FakeHttpResponse(HttpResponseBase):
@@ -2737,7 +2756,13 @@ def test_redirect_default_case():
             self.kwargs = kwargs
 
     assert (
-        create_or_edit_object_redirect(**merged(expected, is_create=sentinel1, redirect=lambda **kwargs: FakeHttpResponse(**kwargs))).kwargs
+        create_or_edit_object_redirect(
+            **merged(
+                expected,
+                is_create=sentinel1,
+                redirect=lambda **kwargs: FakeHttpResponse(**kwargs),
+            )
+        ).kwargs
         == expected
     )
 
@@ -2774,34 +2799,16 @@ def test_unique_constraint_violation_edit():
     from tests.models import UniqueConstraintTest
 
     form = Form.create(auto__model=UniqueConstraintTest)
-    form.bind(request=req(
-        'post',
-        f_int='3',
-        f_float='5.1',
-        f_bool='True',
-        **{'-submit': ''}
-    )).render_to_response()
+    form.bind(request=req('post', f_int='3', f_float='5.1', f_bool='True', **{'-submit': ''})).render_to_response()
 
-    form.bind(request=req(
-        'post',
-        f_int='3',
-        f_float='5.1',
-        f_bool='False',
-        **{'-submit': ''}
-    )).render_to_response()
+    form.bind(request=req('post', f_int='3', f_float='5.1', f_bool='False', **{'-submit': ''})).render_to_response()
 
     assert UniqueConstraintTest.objects.all().count() == 2
 
     instance = UniqueConstraintTest.objects.get(f_bool=False)
 
     form = Form.edit(auto__instance=instance)
-    bound_form = form.bind(request=req(
-        'post',
-        f_int='3',
-        f_float='5.1',
-        f_bool='True',
-        **{'-submit': ''}
-    ))
+    bound_form = form.bind(request=req('post', f_int='3', f_float='5.1', f_bool='True', **{'-submit': ''}))
     bound_form.render_to_response()
 
     assert bound_form.is_valid() is False
@@ -2980,7 +2987,10 @@ def test_time_parse():
         (['foo', 'bar__boink__bink'], ['', 'bar', 'bar__boink']),
         (['foo', 'bar__boink__bink'], ['', 'bar', 'bar__boink']),
         (['foo__hej', 'foo__hopp', 'bar__bink', 'bar__boink'], ['bar', 'foo']),
-        (['fisk', 'foo__hej', 'foo__hopp', 'bar__bink', 'bar__boink'], ['', 'bar', 'foo']),
+        (
+            ['fisk', 'foo__hej', 'foo__hopp', 'bar__bink', 'bar__boink'],
+            ['', 'bar', 'foo'],
+        ),
     ],
 )
 def test_find_prefixes(attributes, result):
@@ -2989,19 +2999,14 @@ def test_find_prefixes(attributes, result):
 
 @pytest.mark.django_db
 def test_choices_in_char_field_model():
-    form = Form.edit(
-        auto__model=ChoicesModel,
-    ).bind(
+    form = Form.edit(auto__model=ChoicesModel,).bind(
         request=req('get'),
     )
 
     assert form.fields.color.choices == ['purple', 'orange']
 
     value, display_name = ChoicesModel.CHOICES[0]
-    assert (
-        form.fields.color.choice_id_formatter(value, **form.fields.color.iommi_evaluate_parameters())
-        == value
-    )
+    assert form.fields.color.choice_id_formatter(value, **form.fields.color.iommi_evaluate_parameters()) == value
     assert (
         form.fields.color.choice_display_name_formatter(value, **form.fields.color.iommi_evaluate_parameters())
         == display_name
@@ -3017,22 +3022,16 @@ def test_choices_in_char_field_model():
 def test_choices_in_char_field_model_as_class():
     from tests.models import ChoicesClassModel
 
-    form = Form.edit(
-        auto__model=ChoicesClassModel,
-    ).bind(
+    form = Form.edit(auto__model=ChoicesClassModel,).bind(
         request=req('get'),
     )
 
     assert form.fields.color.choices == ['purple_thing-thing', 'orange']
 
     value, label = ChoicesClassModel.ColorChoices.choices[0]
+    assert form.fields.color.choice_id_formatter(value, **form.fields.color.iommi_evaluate_parameters()) == value
     assert (
-        form.fields.color.choice_id_formatter(value, **form.fields.color.iommi_evaluate_parameters())
-        == value
-    )
-    assert (
-        form.fields.color.choice_display_name_formatter(value, **form.fields.color.iommi_evaluate_parameters())
-        == label
+        form.fields.color.choice_display_name_formatter(value, **form.fields.color.iommi_evaluate_parameters()) == label
     )
     assert form.fields.color.choice_tuples == [
         ('purple_thing-thing', 'purple_thing-thing', 'Purple', False, 1),
@@ -3071,7 +3070,10 @@ def test_grouped_choices():
     assert f.fields.foo.grouped_choice_tuples == [
         (None, []),
         ('a', [(1, '1', '1', False, 1), (2, '2', '2', False, 2)]),
-        ('b', [(3, '3', '3', False, 3), (4, '4', '4', False, 4), (5, '5', '5', False, 5)]),
+        (
+            'b',
+            [(3, '3', '3', False, 3), (4, '4', '4', False, 4), (5, '5', '5', False, 5)],
+        ),
     ]
 
 

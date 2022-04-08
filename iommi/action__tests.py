@@ -113,7 +113,13 @@ def test_all_action_shortcuts():
         actions: Dict[str, Action] = RefinableMembers()
 
         def on_refine_done(self):
-            refine_done_members(self, name='actions', members_from_namespace=self.actions, cls=MyFancyAction, members_cls=Actions)
+            refine_done_members(
+                self,
+                name='actions',
+                members_from_namespace=self.actions,
+                cls=MyFancyAction,
+                members_cls=Actions,
+            )
 
         def on_bind(self):
             bind_members(self, name='actions')
@@ -190,14 +196,30 @@ def test_actions():
         class Meta:
             sortable = False
             actions = dict(
-                a=Action(display_name='Foo', attrs__href='/foo/', include=lambda table, **_: table.rows is not rows),
-                b=Action(display_name='Bar', attrs__href='/bar/', include=lambda table, **_: table.rows is rows),
+                a=Action(
+                    display_name='Foo',
+                    attrs__href='/foo/',
+                    include=lambda table, **_: table.rows is not rows,
+                ),
+                b=Action(
+                    display_name='Bar',
+                    attrs__href='/bar/',
+                    include=lambda table, **_: table.rows is rows,
+                ),
                 c=Action(display_name='Baz', attrs__href='/bar/', group='Other'),
                 d=dict(display_name='Qux', attrs__href='/bar/', group='Other'),
                 e=Action.icon('icon_foo', display_name='Icon foo', attrs__href='/icon_foo/'),
-                f=Action.icon('icon_bar', icon_classes=['lg'], display_name='Icon bar', attrs__href='/icon_bar/'),
+                f=Action.icon(
+                    'icon_bar',
+                    icon_classes=['lg'],
+                    display_name='Icon bar',
+                    attrs__href='/icon_bar/',
+                ),
                 g=Action.icon(
-                    'icon_baz', icon_classes=['one', 'two'], display_name='Icon baz', attrs__href='/icon_baz/'
+                    'icon_baz',
+                    icon_classes=['one', 'two'],
+                    display_name='Icon baz',
+                    attrs__href='/icon_baz/',
                 ),
             )
 

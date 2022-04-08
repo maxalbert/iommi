@@ -28,6 +28,7 @@ def with_defaults(__target__=None, **decorator_kwargs):
                     pass
 
             return instance
+
         wrapper_for_with_defaults.__iommi_with_defaults_kwargs = decorator_kwargs
         return wrapper_for_with_defaults
 

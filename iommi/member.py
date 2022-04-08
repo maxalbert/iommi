@@ -44,16 +44,17 @@ class Members(Traversable):
 
 
 def refine_done_members(
-        container,
-        *,
-        name: str,
-        members_from_namespace: Dict[str, Traversable] = None,
-        members_from_declared: Dict[str, Traversable] = None,
-        members_from_auto: Dict[str, Traversable] = None,
-        cls: Type,
-        members_cls: Type = Members,
-        extra_member_defaults=None,
-        unknown_types_fall_through=False):
+    container,
+    *,
+    name: str,
+    members_from_namespace: Dict[str, Traversable] = None,
+    members_from_declared: Dict[str, Traversable] = None,
+    members_from_auto: Dict[str, Traversable] = None,
+    cls: Type,
+    members_cls: Type = Members,
+    extra_member_defaults=None,
+    unknown_types_fall_through=False,
+):
     """
     This function is used to collect and merge data from the constructor
     argument, the declared members, and other config into one data structure.
@@ -75,7 +76,9 @@ def refine_done_members(
     In this example the resulting table will have two columns `instrument` and
     `name`, with `instrument` after name even though it was declared before.
     """
-    forbidden_names = FORBIDDEN_NAMES & (set(keys(members_from_declared or {})) | set(keys(members_from_namespace or {})))
+    forbidden_names = FORBIDDEN_NAMES & (
+        set(keys(members_from_declared or {})) | set(keys(members_from_namespace or {}))
+    )
     if forbidden_names:
         raise ForbiddenNamesException(
             f'The names {", ".join(sorted(forbidden_names))} are reserved by iommi, please pick other names'
@@ -92,7 +95,10 @@ def refine_done_members(
 
     if members_from_declared is not None:
         for key, x in items(members_from_declared):
-            assert '__' not in key, "Don't specify nested attrs using the field name. You lose the ability to include more config from other places. Pick another name and give the path as attr instead"
+            assert '__' not in key, (
+                "Don't specify nested attrs using the field name. You lose the ability to include more config from "
+                "other places. Pick another name and give the path as attr instead"
+            )
             x._name = key
             member_by_name[key] = x
 
@@ -185,7 +191,12 @@ class ForbiddenNamesException(Exception):
 
 # noinspection PyCallByClass
 class MemberBinder(dict):
-    def __init__(self, parent: Members, _declared_members: Dict[str, Traversable], _unknown_types_fall_through: bool):
+    def __init__(
+        self,
+        parent: Members,
+        _declared_members: Dict[str, Traversable],
+        _unknown_types_fall_through: bool,
+    ):
         if _unknown_types_fall_through:
             bindable_names = []
             for name, member in items(_declared_members):

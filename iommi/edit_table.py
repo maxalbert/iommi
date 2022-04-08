@@ -22,8 +22,8 @@ from tri_declarative import (
 )
 from tri_struct import Struct
 
-from iommi.action import (Action)
-from iommi.asset import (Asset)
+from iommi.action import Action
+from iommi.asset import Asset
 from iommi.base import (
     items,
     keys,
@@ -82,7 +82,9 @@ class EditCell(Cell):
             if self.table.edit_errors:
                 errors = self.table.edit_errors.get(path)
                 if errors:
-                    return Template('{{ input_html }}<br><span class="text-danger"><ul class="errors">{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></a>').render(context=Context(dict(input_html=input_html, errors=errors)))
+                    return Template(
+                        '{{ input_html }}<br><span class="text-danger"><ul class="errors">{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></a>'
+                    ).render(context=Context(dict(input_html=input_html, errors=errors)))
 
             return input_html
         else:
@@ -138,7 +140,8 @@ class EditColumn(Column):
         cell__attrs__class__delete=True,
         # language=js
         assets__fancy_delete=Asset(
-            mark_safe('''
+            mark_safe(
+                '''
                 $(document).ready(() => {
                     $('.edit_table_delete').click((event) => {
                         const checked = $(event.target).closest('tr').find('input')[0].checked;
@@ -148,9 +151,10 @@ class EditColumn(Column):
                         return false;
                     });
                 });
-            '''),
+            '''
+            ),
             tag='script',
-        )
+        ),
     )
     def delete(cls, **kwargs):
         def cell__value(row, table, cells, column, **_):
@@ -251,9 +255,7 @@ class EditTable(Table):
         )
         actions__csrf = Action(
             tag='div',
-            children__csrf=Fragment(
-                template=lambda **_: Template('{% csrf_token %}')
-            ),
+            children__csrf=Fragment(template=lambda **_: Template('{% csrf_token %}')),
             attrs__style__display='none',
         )
         actions__add_row = Action.button(
@@ -269,7 +271,9 @@ class EditTable(Table):
         }
 
         # language=js
-        assets__edit_table_js = Asset.js(mark_safe('''
+        assets__edit_table_js = Asset.js(
+            mark_safe(
+                '''
 
         function iommi_add_row(element) {
             function find_for_siblings(s) {
@@ -311,7 +315,9 @@ class EditTable(Table):
                 iommi_init_all_select2();
             }
         }
-        '''))
+        '''
+            )
+        )
 
     def on_refine_done(self):
         super(EditTable, self).on_refine_done()
@@ -350,24 +356,28 @@ class EditTable(Table):
         if 'model' not in auto and 'rows' in auto:
             auto['model'] = auto.rows.model
 
-        self.create_form = self.get_meta().form_class(**setdefaults_path(
-            Namespace(),
-            self.create_form,
-            fields=fields,
-            _name='create_form',
-            auto=auto,
-        ))
+        self.create_form = self.get_meta().form_class(
+            **setdefaults_path(
+                Namespace(),
+                self.create_form,
+                fields=fields,
+                _name='create_form',
+                auto=auto,
+            )
+        )
 
         if auto:
             auto.default_included = False
 
-        self.edit_form = self.get_meta().form_class(**setdefaults_path(
-            Namespace(),
-            self.edit_form,
-            fields=fields,
-            _name='edit_form',
-            auto=auto,
-        ))
+        self.edit_form = self.get_meta().form_class(
+            **setdefaults_path(
+                Namespace(),
+                self.edit_form,
+                fields=fields,
+                _name='edit_form',
+                auto=auto,
+            )
+        )
 
         declared_fields = self.edit_form.iommi_namespace.fields
         self.edit_form = self.edit_form.refine_defaults(fields=declared_fields).refine_done()
@@ -392,12 +402,11 @@ class EditTable(Table):
             sentinel_row = self.model(pk='#sentinel#')
         else:
             sentinel_row = Struct(pk='#sentinel#', **{k: '' for k in keys(self.create_form.fields)})
-        self.attrs['data-add-template'] = self.cells_class(
-            row=sentinel_row,
-            row_index=-1,
-            is_create_template=True,
-            **self.row.as_dict()
-        ).bind(parent=self.create_form).__html__()
+        self.attrs['data-add-template'] = (
+            self.cells_class(row=sentinel_row, row_index=-1, is_create_template=True, **self.row.as_dict())
+            .bind(parent=self.create_form)
+            .__html__()
+        )
 
     def is_valid(self):
         return not self.edit_errors and not self.create_errors
@@ -412,7 +421,7 @@ class EditTable(Table):
         def parse_virtual_pk(k):
             if not k.startswith(prefix) or k.startswith(delete_prefix):
                 return None
-            parts = k[len(prefix):].split(DISPATCH_PATH_SEPARATOR)
+            parts = k[len(prefix) :].split(DISPATCH_PATH_SEPARATOR)
             if len(parts) < 2:
                 return None
             try:
@@ -420,26 +429,21 @@ class EditTable(Table):
             except ValueError:
                 return None
 
-        pks = {
-            parse_virtual_pk(k)
-            for k in keys(self.get_request().POST)
-
-        }
+        pks = {parse_virtual_pk(k) for k in keys(self.get_request().POST)}
 
         virtual_pks = {k for k in pks if k is not None and k < 0}
 
         if not virtual_pks:
             return
 
-        rows = [
-            self.model(pk=pk)
-            for pk in virtual_pks
-        ]
+        rows = [self.model(pk=pk) for pk in virtual_pks]
 
         for i, row in enumerate(rows):
             row = self.preprocess_row_for_create(table=self, row=row)
             assert row is not None, 'preprocess_row must return the object'
-            yield self.cells_class(is_create_template=True, row=row, row_index=i, **self.row.as_dict()).bind(parent=self)
+            yield self.cells_class(is_create_template=True, row=row, row_index=i, **self.row.as_dict()).bind(
+                parent=self
+            )
 
     def get_errors(self):
         return set()

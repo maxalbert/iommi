@@ -116,7 +116,6 @@ from iommi.refinable import (
 from iommi.shortcut import with_defaults
 from iommi.sort_after import sort_after
 
-
 # Prevent django templates from calling That Which Must Not Be Called
 Namespace.do_not_call_in_templates = True
 
@@ -602,7 +601,9 @@ class Field(Part, Tag):
 
     def on_refine_done(self):
         if 'choice' in getattr(self, '__tri_declarative_shortcut_stack', []):
-            assert self.iommi_namespace.get('choices') is not None, 'To use Field.choice, you must pass the choices list'
+            assert (
+                self.iommi_namespace.get('choices') is not None
+            ), 'To use Field.choice, you must pass the choices list'
 
         model_field = self.model_field
         if model_field and model_field.remote_field:
@@ -703,14 +704,11 @@ class Field(Part, Tag):
         else:
             if self.iommi_namespace.non_editable_input.get('tag', self.iommi_namespace.input.get('tag')) == 'input':
                 self.input = self.iommi_namespace.input(
-                    attrs__value=self.rendered_value,
-                    attrs__disabled=True,
-                    **self.iommi_namespace.non_editable_input
+                    attrs__value=self.rendered_value, attrs__disabled=True, **self.iommi_namespace.non_editable_input
                 ).bind(parent=self)
             else:
                 self.input = self.iommi_namespace.input(
-                    children__text=self.rendered_value,
-                    **self.iommi_namespace.non_editable_input
+                    children__text=self.rendered_value, **self.iommi_namespace.non_editable_input
                 ).bind(parent=self)
 
         if self.is_boolean:
@@ -898,11 +896,7 @@ class Field(Part, Tag):
             choice,
             self.choice_id_formatter(choice=choice, **self.iommi_evaluate_parameters()),
             self.choice_display_name_formatter(choice=choice, **self.iommi_evaluate_parameters()),
-            (
-                (choice == self.value)
-                if not self.is_list else
-                (self.value is not None and choice in self.value)
-            ),
+            ((choice == self.value) if not self.is_list else (self.value is not None and choice in self.value)),
         )
 
     @property
@@ -1094,9 +1088,7 @@ class Field(Part, Tag):
         instance = instance.refine(
             Prio.shortcut,
             choices=(
-                (lambda form, **_: choices.all())
-                if isinstance(choices, QuerySet)
-                else choices
+                (lambda form, **_: choices.all()) if isinstance(choices, QuerySet) else choices
             ),  # clone the QuerySet if needed
         )
         return instance
@@ -1272,7 +1264,9 @@ def delete_object__post_handler(form, **_):
 
             # This message must match the one in Django exactly to get translations for free
             # language=html
-            form.add_error(Template("""
+            form.add_error(
+                Template(
+                    """
             {% load i18n %}
             <p>{% blocktrans with escaped_object=object %}Deleting the {{ object_name }} '{{ escaped_object }}' would require deleting the following protected related objects:{% endblocktrans %}</p>
 
@@ -1287,11 +1281,17 @@ def delete_object__post_handler(form, **_):
                     </li>
                 {% endfor %}
             </ul>
-            """).render(context=Context(dict(
-                restricted_objects=objects,
-                object=instance,
-                object_name=instance._meta.verbose_name,
-            ))))
+            """
+                ).render(
+                    context=Context(
+                        dict(
+                            restricted_objects=objects,
+                            object=instance,
+                            object_name=instance._meta.verbose_name,
+                        )
+                    )
+                )
+            )
             return None
 
     return create_or_edit_object_redirect(
@@ -1384,7 +1384,7 @@ class Form(Part):
         # @test
         post_handler(form.bind(request=req('post')))
         # @end
-        """
+    """
 
     actions: Namespace = RefinableMembers()
     actions_template: Union[str, Template] = Refinable()
@@ -1436,7 +1436,9 @@ class Form(Part):
         extra_member_defaults = dict()
         if self.auto:
             auto = FormAutoConfig(**self.auto).refine_done(parent=self)
-            assert not self.model, "You can't use the auto feature and explicitly pass model. Either pass auto__model, or we will set the model for you from auto__instance"
+            assert (
+                not self.model
+            ), "You can't use the auto feature and explicitly pass model. Either pass auto__model, or we will set the model for you from auto__instance"
             if auto.model is None:
                 auto.model = auto.instance.__class__
 
@@ -1474,8 +1476,22 @@ class Form(Part):
 
         assert isinstance(self.fields, dict)
 
-        refine_done_members(self, name='actions', members_from_namespace=self.actions, cls=self.get_meta().action_class, members_cls=Actions)
-        refine_done_members(self, name='fields', members_from_namespace=self.fields, members_from_declared=self.get_declared('_fields_dict'), members_from_auto=fields_from_auto, cls=self.get_meta().member_class, extra_member_defaults=extra_member_defaults,)
+        refine_done_members(
+            self,
+            name='actions',
+            members_from_namespace=self.actions,
+            cls=self.get_meta().action_class,
+            members_cls=Actions,
+        )
+        refine_done_members(
+            self,
+            name='fields',
+            members_from_namespace=self.fields,
+            members_from_declared=self.get_declared('_fields_dict'),
+            members_from_auto=fields_from_auto,
+            cls=self.get_meta().member_class,
+            extra_member_defaults=extra_member_defaults,
+        )
 
         super(Form, self).on_refine_done()
 
